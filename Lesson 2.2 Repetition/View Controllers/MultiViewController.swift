@@ -33,22 +33,37 @@ class MultiViewController: UIViewController {
         colorView.backgroundColor = currentColor
         setSliders()
         
-        setValue(for: redLabel, greenLabel, blueLabel)
+        setLabelValue(for: redLabel, greenLabel, blueLabel)
+        setTextFieldValue(for: redTextField, greenTextField, blueTextField)
         
         redSlider.minimumTrackTintColor = .red
         greenSlider.minimumTrackTintColor = .green
         blueSlider.minimumTrackTintColor = .blue
+        
+        redTextField.delegate = self
+        greenTextField.delegate = self
+        blueTextField.delegate = self
     }
-    
+    // MARK: - При смещении слайдера меняется цвет вьюшки, данные лейбл и текстфилд
     @IBAction func sliderAction(_ sender: UISlider) {
         setupColor()
         switch sender {
-        case redSlider: setValue(for: redLabel)
-        case greenSlider: setValue(for: greenLabel)
-        default: setValue(for: blueLabel)
+        case redSlider:
+            setLabelValue(for: redLabel)
+            setTextFieldValue(for: redTextField)
+        case greenSlider:
+            setLabelValue(for: greenLabel)
+            setTextFieldValue(for: greenTextField)
+        default:
+            setLabelValue(for: blueLabel)
+            setTextFieldValue(for: blueTextField)
         }
     }
-    
+    @IBAction func doneButton() {
+        delegate.setColor(colorView.backgroundColor ?? .white)
+        dismiss(animated: true)
+    }
+    // MARK: - Установка цвета
     private func setupColor() {
         colorView.backgroundColor = UIColor(
             red: CGFloat(redSlider.value),
@@ -57,8 +72,8 @@ class MultiViewController: UIViewController {
             alpha: 1
         )
     }
-    
-    private func setValue(for labels: UILabel...) {
+    // MARK: Смена данных лейбл
+    private func setLabelValue(for labels: UILabel...) {
         labels.forEach { label in
             switch label {
             case redLabel: label.text = string(from: redSlider)
@@ -67,7 +82,17 @@ class MultiViewController: UIViewController {
             }
         }
     }
-    
+    // MARK: Смена данных текстфилд
+    private func setTextFieldValue(for textFields: UITextField...) {
+        textFields.forEach { textField in
+            switch textField {
+            case redTextField: textField.text = string(from: redSlider)
+            case greenTextField: textField.text = string(from: greenSlider)
+            default: textField.text = string(from: blueSlider)
+            }
+        }
+    }
+    // MARK: От передачи цвета фона с первого экрана на второй, меняется положение слайдеров
     private func setSliders() {
         let ciColor = CIColor(color: currentColor)
         
@@ -75,9 +100,43 @@ class MultiViewController: UIViewController {
         greenSlider.value = Float(ciColor.green)
         blueSlider.value = Float(ciColor.blue)
     }
-    
+    // MARK: Установка формата 0.00 десятичных дробей для лейбл и текстфилд
     private func string(from slider: UISlider) -> String {
         String(format: "%.2f", slider.value)
+    }
+    // MARK: Alert сообщение
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .default)
+        alert.addAction(okAction)
+        present(alert, animated: true)
+    }
+}
+// MARK: - Работа с текстфилд и с касанием на экран при печатании текста в текстфилд
+extension MultiViewController: UITextFieldDelegate {
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        view.endEditing(true)
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        guard let newValue = textField.text else { return }
+        
+        if let numberValue = Float(newValue) {
+            switch textField {
+            case redTextField:
+                redSlider.setValue(numberValue, animated: true)
+                sliderAction(redSlider)
+            case greenTextField:
+                greenSlider.setValue(numberValue, animated: true)
+                sliderAction(greenSlider)
+            default:
+                blueSlider.setValue(numberValue, animated: true)
+                sliderAction(blueSlider)
+            }
+            return
+        }
+        showAlert(title: "Wrong forman!", message: "Please type correct format: '0.00'")
     }
 }
 
