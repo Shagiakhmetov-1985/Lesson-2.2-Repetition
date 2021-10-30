@@ -111,6 +111,10 @@ class MultiViewController: UIViewController {
         alert.addAction(okAction)
         present(alert, animated: true)
     }
+    // MARK: Реакция при нажатии на кнопку Done в барбаттон на клавиатуре
+    @objc private func didTapDone() {
+        view.endEditing(true)
+    }
 }
 // MARK: - Работа с текстфилд и с касанием на экран при печатании текста в текстфилд
 extension MultiViewController: UITextFieldDelegate {
@@ -137,6 +141,27 @@ extension MultiViewController: UITextFieldDelegate {
             return
         }
         showAlert(title: "Wrong forman!", message: "Please type correct format: '0.00'")
+    }
+    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        let keyboardToolbar = UIToolbar()
+        textField.inputAccessoryView = keyboardToolbar
+        keyboardToolbar.sizeToFit()
+        
+        let doneButton = UIBarButtonItem(
+            title: "Done",
+            style: .done,
+            target: self,
+            action: #selector(didTapDone)
+        )
+        
+        let flexBarButton = UIBarButtonItem(
+            barButtonSystemItem: .flexibleSpace,
+            target: nil,
+            action: nil
+        )
+        
+        keyboardToolbar.items = [flexBarButton, doneButton]
     }
 }
 
